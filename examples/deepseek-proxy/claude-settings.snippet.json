@@ -1,0 +1,15 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:4000",
+    "ANTHROPIC_API_KEY": "proxy-local",
+    "ANTHROPIC_MODEL": "deepseek-chat",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek-chat",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek-chat",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-chat",
+    "ANTHROPIC_SMALL_FAST_MODEL": "deepseek-chat",
+    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "1",
+    "ENABLE_TOOL_SEARCH": "false",
+    "API_TIMEOUT_MS": "600000"
+  },
+  "_comment": "ANTHROPIC_* values must match LLM_MODEL / LLM_MODEL_OPUS in .env. Upstream OPENAI_API_BASE / OPENAI_API_KEY are only used by LiteLLM (start-litellm.ps1), not Claude directly."
+}

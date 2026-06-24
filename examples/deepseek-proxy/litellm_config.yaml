@@ -1,0 +1,10 @@
+# Static LiteLLM settings. Model routing is generated at runtime from .env
+# into litellm_config.generated.yaml by start-litellm.ps1
+
+litellm_settings:
+  drop_params: true
+  use_chat_completions_url_for_anthropic_messages: true
+
+general_settings:
+  # Optional: require clients to send Authorization: Bearer <key>
+  # master_key: os.environ/LITELLM_MASTER_KEY
