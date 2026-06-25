@@ -46,5 +46,7 @@ Set-EnvDefault -Name "PROXY_HOST" -Default "127.0.0.1"
 Set-EnvDefault -Name "PROXY_PORT" -Default "4000"
 Set-EnvDefault -Name "PROXY_API_KEY" -Default "proxy-local"
 
+Set-EnvDefault -Name "UPSTREAM_USER_AGENT" -Default "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
 # Normalize base URL (no trailing slash)
 $env:OPENAI_API_BASE = $env:OPENAI_API_BASE.TrimEnd('/')

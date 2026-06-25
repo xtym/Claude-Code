@@ -1,0 +1,14 @@
+{
+    "ignore_dirs": [
+        ".git", ".svn", ".hg", ".idea", ".vscode", "__pycache__",
+        "vendor", "node_modules", "bower_components", "dist", "build",
+        "runtime", "storage", "cache", "logs", "temp", "tmp",
+        ".trae", ".marvis", ".cursor",
+        "public/mp/static", "public/apidoc"
+    ],
+    "ignore_files": [
+        ".DS_Store", "Thumbs.db", ".gitignore", ".gitattributes",
+        ".env.local", ".env.test", ".env.production",
+        ".min.js", ".min.css", ".min.map"
+    ]
+}

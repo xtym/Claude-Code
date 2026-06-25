@@ -20,6 +20,7 @@ import { onChangeAppState } from './state/onChangeAppState.js';
 import { normalizeApiKeyForConfig } from './utils/authPortable.js';
 import { getExternalClaudeMdIncludes, getMemoryFiles, shouldShowClaudeMdExternalIncludesWarning } from './utils/claudemd.js';
 import { checkHasTrustDialogAccepted, getCustomApiKeyStatus, getGlobalConfig, saveGlobalConfig } from './utils/config.js';
+import { isCustomApiProxyMode } from './utils/customProxy.js';
 import { updateDeepLinkTerminalPreference } from './utils/deepLink/terminalPreference.js';
 import { isEnvTruthy, isRunningOnHomespace } from './utils/envUtils.js';
 import { type FpsMetrics, FpsTracker } from './utils/fpsTracker.js';
@@ -35,6 +36,30 @@ export function completeOnboarding(): void {
     hasCompletedOnboarding: true,
     lastOnboardingVersion: MACRO.VERSION
   }));
+}
+
+function prepareCustomProxySession(): void {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  saveGlobalConfig(current => {
+    const next = {
+      ...current,
+      hasCompletedOnboarding: true,
+      lastOnboardingVersion: MACRO.VERSION,
+      ...(current.theme ? {} : { theme: 'dark' as const }),
+    }
+    if (!apiKey) return next
+    const truncated = normalizeApiKeyForConfig(apiKey)
+    const approved = current.customApiKeyResponses?.approved ?? []
+    if (approved.includes(truncated)) return next
+    return {
+      ...next,
+      customApiKeyResponses: {
+        ...current.customApiKeyResponses,
+        approved: [...approved, truncated],
+        rejected: current.customApiKeyResponses?.rejected ?? [],
+      },
+    }
+  })
 }
 export function showDialog<T = void>(root: Root, renderer: (done: (result: T) => void) => React.ReactNode): Promise<T> {
   return new Promise<T>(resolve => {
@@ -108,7 +133,11 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
   }
   const config = getGlobalConfig();
   let onboardingShown = false;
-  if (!config.theme || !config.hasCompletedOnboarding // always show onboarding at least once
+
+  // OpenAI-compatible proxy: skip Claude OAuth / email login entirely.
+  if (isCustomApiProxyMode()) {
+    prepareCustomProxySession();
+  } else if (!config.theme || !config.hasCompletedOnboarding // always show onboarding at least once
   ) {
     onboardingShown = true;
     const {

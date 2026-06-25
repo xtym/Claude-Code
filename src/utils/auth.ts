@@ -11,6 +11,7 @@ import {
 } from 'src/services/analytics/index.js'
 import { getModelStrings } from 'src/utils/model/modelStrings.js'
 import { getAPIProvider } from 'src/utils/model/providers.js'
+import { isCustomApiProxyMode } from 'src/utils/customProxy.js'
 import {
   getIsNonInteractiveSession,
   preferThirdPartyAuthentication,
@@ -98,6 +99,9 @@ function isManagedOAuthContext(): boolean {
 /** Whether we are supporting direct 1P auth. */
 // this code is closely related to getAuthTokenSource
 export function isAnthropicAuthEnabled(): boolean {
+  // Custom proxy (LiteLLM / OpenAI-compatible gateway): API key only, no OAuth.
+  if (isCustomApiProxyMode()) return false
+
   // --bare: API-key-only, never OAuth.
   if (isBareMode()) return false
 
@@ -243,6 +247,16 @@ export function getAnthropicApiKeyWithSource(
           : getApiKeyFromApiKeyHelperCached(),
         source: 'apiKeyHelper',
       }
+    }
+    return { key: null, source: 'none' }
+  }
+
+  // Custom proxy: use env API key without approval / keychain / OAuth.
+  if (isCustomApiProxyMode()) {
+    const proxyKey =
+      process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN
+    if (proxyKey) {
+      return { key: proxyKey, source: 'ANTHROPIC_API_KEY' }
     }
     return { key: null, source: 'none' }
   }

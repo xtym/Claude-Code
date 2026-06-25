@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "project_path": "{{PROJECT_PATH}}",
+    "generated_at": "{{GENERATED_AT}}",
+    "version": "1.0",
+    "total_files": 0,
+    "total_classes": 0
+  },
+  "files": {},
+  "directories": {},
+  "classes": {},
+  "configs": {},
+  "dependencies": {}
+}

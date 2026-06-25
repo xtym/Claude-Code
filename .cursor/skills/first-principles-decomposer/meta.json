@@ -1,0 +1,26 @@
+{
+  "author": "ClawHub",
+  "author_icon": "https://static.pc.yyb.qq.com/wupload2skill-author-icons/1776694519759_clawhub.png",
+  "description": "Break any problem down to fundamental truths, then rebuild solutions from atoms up. Use when user says \"firstp\", \"first principles\", \"from scratch\", \"what are we assuming\", \"break this down\", \"atomic\", \"fundamental truth\", \"physics thinking\", \"Elon method\", \"bedrock\", \"ground up\", \"core problem\", \"strip away\", or challenges assumptions about how things are done.",
+  "detail_describe": "罗列现有方案背后的隐藏假设\n逐条质疑并拆到最底层事实\n只从已验证真理重建解决方案\n对比新旧方案差异与优势\n适用于复杂问题与新项目启动",
+  "display_description": "把复杂问题拆到最底层假设再从原点重建方案",
+  "display_name": "First Principles Decomposer",
+  "download_count": 18164,
+  "download_url": "https://static.pc.yyb.qq.com/wupload2skill-packages/1776694486111_21-First%20Principles%20Decomposer.zip",
+  "icon": "https://static.pc.yyb.qq.com/wupload2skill-icons/1776694530747_173_First%20Principles%20Decomposer_%E7%AC%AC%E4%B8%80%E6%80%A7%E5%8E%9F%E7%90%86%E5%88%86%E8%A7%A3.png",
+  "id": 120,
+  "is_downloaded": false,
+  "last_modified_time": "2026-05-24 23:22:44",
+  "md5": "a500fcb6d1aed513a40fb0887b85ffd5",
+  "name": "first-principles-decomposer",
+  "scope": [
+    "main"
+  ],
+  "type": "办公学习",
+  "use_cases": [
+    "用第一性原理拆解“要不要买车”这个问题。",
+    "挑战外卖配送 30 分钟必达背后的假设。",
+    "从原点重新设计微信支付的转账流程。"
+  ],
+  "version": "1.0.2"
+}

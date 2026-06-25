@@ -1,3 +1,14 @@
+# Auto-generated from .env - do not edit manually
+model_list:
+  - model_name: deepseek/deepseek-v4-flash
+    litellm_params:
+      model: openai/deepseek/deepseek-v4-flash
+      api_key: os.environ/OPENAI_API_KEY
+      api_base: os.environ/OPENAI_API_BASE
+      timeout: 600
+      stream_timeout: 120
+      extra_headers:
+        User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 # Static LiteLLM settings. Model routing is generated at runtime from .env
 # into litellm_config.generated.yaml by start-litellm.ps1
 
