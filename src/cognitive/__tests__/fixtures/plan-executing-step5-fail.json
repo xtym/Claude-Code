@@ -1,0 +1,45 @@
+{
+  "id": "fixture-plan-step5-fail",
+  "status": "executing",
+  "activeStepId": "step-5",
+  "replanCountsByStepId": {},
+  "steps": [
+    {
+      "id": "step-1",
+      "description": "Analyze codebase structure",
+      "status": "done",
+      "retryCount": 0
+    },
+    {
+      "id": "step-2",
+      "description": "Identify refactor targets",
+      "status": "done",
+      "retryCount": 0
+    },
+    {
+      "id": "step-3",
+      "description": "Create migration plan",
+      "status": "done",
+      "retryCount": 0
+    },
+    {
+      "id": "step-4",
+      "description": "Update imports in module A",
+      "status": "done",
+      "retryCount": 0
+    },
+    {
+      "id": "step-5",
+      "description": "Update imports in module B",
+      "status": "running",
+      "retryCount": 2,
+      "expectedTools": ["Edit"]
+    },
+    {
+      "id": "step-6",
+      "description": "Run tests and verify",
+      "status": "pending",
+      "retryCount": 0
+    }
+  ]
+}

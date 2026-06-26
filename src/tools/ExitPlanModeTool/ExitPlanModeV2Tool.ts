@@ -38,6 +38,8 @@ import {
   isTeammate,
 } from '../../utils/teammate.js'
 import { writeToMailbox } from '../../utils/teammateMailbox.js'
+import { isPlanningEnabled } from '../../cognitive/flags.js'
+import { onPlanApproved } from '../../cognitive/planning/PlanningOrchestrator.js'
 import { AGENT_TOOL_NAME } from '../AgentTool/constants.js'
 import { TEAM_CREATE_TOOL_NAME } from '../TeamCreateTool/constants.js'
 import { EXIT_PLAN_MODE_V2_TOOL_NAME } from './constants.js'
@@ -405,6 +407,15 @@ export const ExitPlanModeV2Tool: Tool<InputSchema, Output> = buildTool({
     const hasTaskTool =
       isAgentSwarmsEnabled() &&
       context.options.tools.some(t => toolMatchesName(t, AGENT_TOOL_NAME))
+
+    if (
+      isPlanningEnabled() &&
+      !context.agentId &&
+      plan &&
+      plan.trim() !== ''
+    ) {
+      onPlanApproved(plan)
+    }
 
     return {
       data: {

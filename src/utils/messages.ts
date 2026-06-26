@@ -3641,6 +3641,20 @@ Read the team config to discover your teammates' names. Check the task list peri
         }),
       ])
     }
+    case 'plan_updated': {
+      const stepsSummary = attachment.steps
+        .map(
+          (step, index) =>
+            `${index + 1}. [${step.status}] ${step.description} (id: ${step.id})`,
+        )
+        .join('\n')
+      return wrapMessagesInSystemReminder([
+        createUserMessage({
+          content: `## Plan Updated\n\nReason: ${attachment.reason}\n\nUpdated steps:\n${stepsSummary}\n\nFollow the updated plan. The active step is ${attachment.activeStepId ?? 'unset'}.`,
+          isMeta: true,
+        }),
+      ])
+    }
     case 'invoked_skills': {
       if (attachment.skills.length === 0) {
         return []

@@ -1,0 +1,11 @@
+{
+  "messages": [
+    { "type": "user", "uuid": "u1", "content": "Let's use PostgreSQL for the persistence layer." },
+    { "type": "assistant", "uuid": "a1", "content": "Agreed. I'll design around PostgreSQL." },
+    { "type": "user", "uuid": "u2", "content": "Also add Redis for caching." },
+    { "type": "system", "subtype": "compact_boundary", "uuid": "b1", "compactMetadata": { "trigger": "auto" } },
+    { "type": "user", "uuid": "u3", "content": "Continue with the database schema." }
+  ],
+  "query": "database postgres schema",
+  "expectedSnippet": "PostgreSQL"
+}

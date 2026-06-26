@@ -58,6 +58,7 @@ import {
   hasUltraplanKeyword,
   replaceUltraplanKeyword,
 } from '../ultraplan/keyword.js'
+import { maybeAppendSessionMemorySurface } from '../../cognitive/memory/sessionSurface.js'
 import { processTextPrompt } from './processTextPrompt.js'
 export type ProcessUserInputContext = ToolUseContext & LocalJSXCommandContext
 
@@ -574,6 +575,14 @@ async function processUserInputBase(
   }
 
   // Regular user prompt
+  await maybeAppendSessionMemorySurface({
+    inputString,
+    messages,
+    querySource: querySource!,
+    agentId: context.agentId,
+    attachmentMessages,
+  })
+
   return addImageMetadataMessage(
     processTextPrompt(
       normalizedInput,

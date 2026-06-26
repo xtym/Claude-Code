@@ -58,10 +58,17 @@ import { generateToolUseSummary } from './services/toolUseSummary/toolUseSummary
 import { prependUserContext, appendSystemContext } from './utils/api.js'
 import {
   createAttachmentMessage,
+  collectSurfacedMemories,
   filterDuplicateMemoryAttachments,
   getAttachmentMessages,
   startRelevantMemoryPrefetch,
 } from './utils/attachments.js'
+import {
+  startTranscriptRecoveryPrefetch,
+  toAttachmentMessages,
+  snapshotPreCompactRegion,
+  isTranscriptRecoveryEnabled,
+} from './cognitive/index.js'
 /* eslint-disable @typescript-eslint/no-require-imports */
 const skillPrefetch = feature('EXPERIMENTAL_SKILL_SEARCH')
   ? (require('./services/skillSearch/prefetch.js') as typeof import('./services/skillSearch/prefetch.js'))
@@ -302,6 +309,15 @@ async function* queryLoop(
     state.messages,
     state.toolUseContext,
   )
+  using pendingRecoveryPrefetch = startTranscriptRecoveryPrefetch(
+    state.messages,
+    {
+      querySource,
+      agentId: state.toolUseContext.agentId,
+      abortController: state.toolUseContext.abortController,
+      memoryBytesAlreadyUsed: collectSurfacedMemories(state.messages).totalBytes,
+    },
+  )
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
@@ -523,6 +539,12 @@ async function* queryLoop(
         turnId: deps.uuid(),
         turnCounter: 0,
         consecutiveFailures: 0,
+      }
+
+      if (isTranscriptRecoveryEnabled()) {
+        const boundaryId = deps.uuid()
+        snapshotPreCompactRegion(messagesForQuery, boundaryId)
+        // Phase 1: in-memory only via rebuild on next prefetch from postCompact messages
       }
 
       const postCompactMessages = buildPostCompactMessages(compactionResult)
@@ -1613,6 +1635,18 @@ async function* queryLoop(
       pendingMemoryPrefetch.consumedOnIteration = turnCount - 1
     }
 
+    if (
+      pendingRecoveryPrefetch &&
+      pendingRecoveryPrefetch.settledAt !== null &&
+      pendingRecoveryPrefetch.consumedOnIteration === -1
+    ) {
+      const recoverySlices = await pendingRecoveryPrefetch.promise
+      for (const msg of toAttachmentMessages(recoverySlices)) {
+        yield msg
+        toolResults.push(msg)
+      }
+      pendingRecoveryPrefetch.consumedOnIteration = turnCount - 1
+    }
 
     // Inject prefetched skill discovery. collectSkillDiscoveryPrefetch emits
     // hidden_by_main_turn — true when the prefetch resolved before this point

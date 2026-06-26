@@ -675,7 +675,6 @@ async function getMessagesForSlashCommand(commandName: string, args: string, set
               };
             }
 
-            // Use discriminated union to handle different result types
             if (result.type === 'compact') {
               // Append slash command messages to messagesToKeep so that
               // attachments and hookResults come after user messages
@@ -702,6 +701,26 @@ async function getMessagesForSlashCommand(commandName: string, args: string, set
                 shouldQuery: false,
                 command
               };
+            }
+
+            if (result.type === 'messages') {
+              return {
+                messages: [
+                  syntheticCaveatMessage,
+                  userMessage,
+                  ...(result.displayText
+                    ? [
+                        createUserMessage({
+                          content: `<local-command-stdout>${result.displayText}</local-command-stdout>`,
+                        }),
+                      ]
+                    : []),
+                  ...result.messages,
+                ],
+                shouldQuery: result.shouldQuery,
+                command,
+                resultText: result.displayText,
+              }
             }
 
             // Text result — use system message so it doesn't render as a user bubble

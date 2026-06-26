@@ -20,6 +20,12 @@ export type LocalCommandResult =
       compactionResult: CompactionResult
       displayText?: string
     }
+  | {
+      type: 'messages'
+      messages: Message[]
+      shouldQuery: boolean
+      displayText?: string
+    }
   | { type: 'skip' } // Skip messages
 
 export type PromptCommand = {

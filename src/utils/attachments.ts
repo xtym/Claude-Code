@@ -522,6 +522,34 @@ export type Attachment =
       }[]
     }
   | {
+      type: 'recovered_context'
+      slices: Array<{
+        source: string
+        content: string
+        relevanceScore: number
+      }>
+    }
+  | {
+      type: 'plan_updated'
+      reason: string
+      planId: string
+      activeStepId?: string
+      steps: Array<{
+        id: string
+        description: string
+        status: string
+      }>
+    }
+  | {
+      type: 'session_memory_surface'
+      memories: Array<{
+        path: string
+        content: string
+        mtimeMs: number
+        header?: string
+      }>
+    }
+  | {
       type: 'dynamic_skill'
       skillDir: string
       skillNames: string[]

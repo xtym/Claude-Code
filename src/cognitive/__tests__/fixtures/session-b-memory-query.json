@@ -1,0 +1,16 @@
+{
+  "query": "Bun not npm",
+  "memories": [
+    {
+      "relativePath": "package-manager-prefs.md",
+      "description": "Use Bun instead of npm for package management",
+      "body": "Always use Bun instead of npm for installs and scripts in this project."
+    },
+    {
+      "relativePath": "eslint-notes.md",
+      "description": "Lint configuration",
+      "body": "Pre-commit runs eslint on staged TypeScript files."
+    }
+  ],
+  "expectedSnippet": "Bun instead of npm"
+}

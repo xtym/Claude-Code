@@ -57,7 +57,8 @@ import type {
   ProgressMessage,
   StopHookInfo,
 } from '../../types/message.js'
-import { count } from '../../utils/array.js'
+import { handlePlanningToolResult } from '../../cognitive/planning/planningHook.js'
+import type { ToolErrorKind } from '../../cognitive/types.js'
 import { createAttachmentMessage } from '../../utils/attachments.js'
 import { logForDebugging } from '../../utils/debug.js'
 import {
@@ -168,6 +169,32 @@ export function classifyToolError(error: unknown): string {
     return 'Error'
   }
   return 'UnknownError'
+}
+
+type ToolResultMessageUpdate = {
+  message: Message
+}
+
+function appendPlanningToolHookMessages(
+  resultingMessages: ToolResultMessageUpdate[],
+  opts: {
+    tool: Tool
+    toolUseID: string
+    toolUseContext: ToolUseContext
+    errorKind: ToolErrorKind
+  },
+): void {
+  const planningMessages = handlePlanningToolResult({
+    toolName: opts.tool.name,
+    toolUseId: opts.toolUseID,
+    isError: true,
+    errorKind: opts.errorKind,
+    toolUseContext: opts.toolUseContext,
+    querySource: opts.toolUseContext.options.querySource ?? 'repl_main_thread',
+  })
+  for (const message of planningMessages) {
+    resultingMessages.push({ message })
+  }
 }
 
 /**
@@ -1100,6 +1127,13 @@ async function checkPermissionsAndCallTool(
       }
     }
 
+    appendPlanningToolHookMessages(resultingMessages, {
+      tool,
+      toolUseID,
+      toolUseContext,
+      errorKind: 'permission_denied',
+    })
+
     return resultingMessages
   }
   logEvent('tengu_tool_use_can_use_tool_allowed', {
@@ -1712,7 +1746,7 @@ async function checkPermissionsAndCallTool(
       hookMessages.push(hookResult)
     }
 
-    return [
+    const errorMessages: MessageUpdateLazy[] = [
       {
         message: createUserMessage({
           content: [
@@ -1735,6 +1769,13 @@ async function checkPermissionsAndCallTool(
       },
       ...hookMessages,
     ]
+    appendPlanningToolHookMessages(errorMessages, {
+      tool,
+      toolUseID,
+      toolUseContext,
+      errorKind: isInterrupt ? 'aborted' : 'recoverable',
+    })
+    return errorMessages
   } finally {
     stopSessionActivity('tool_exec')
     // Clean up decision info after logging
