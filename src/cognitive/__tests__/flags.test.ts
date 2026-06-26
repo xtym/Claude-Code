@@ -3,6 +3,7 @@ import {
   isCognitiveLayerEnabled,
   isTranscriptRecoveryEnabled,
   isMemorySurfaceEnabled,
+  isMemoryWriteEnabled,
   isPlanningEnabled,
   isCognitiveScopeAllowed,
 } from '../flags.js'
@@ -25,6 +26,7 @@ describe('cognitive flags', () => {
     expect(isCognitiveLayerEnabled()).toBe(false)
     expect(isTranscriptRecoveryEnabled()).toBe(false)
     expect(isMemorySurfaceEnabled()).toBe(false)
+    expect(isMemoryWriteEnabled()).toBe(false)
     expect(isPlanningEnabled()).toBe(false)
   })
 
@@ -51,6 +53,17 @@ describe('cognitive flags', () => {
     process.env.CLAUDE_CODE_COGNITIVE_LAYER = '1'
     process.env.CLAUDE_CODE_COGNITIVE_PLANNING = '0'
     expect(isPlanningEnabled()).toBe(false)
+  })
+
+  test('memory write flag requires master', () => {
+    process.env.CLAUDE_CODE_COGNITIVE_LAYER = '1'
+    process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE = '1'
+    expect(isMemoryWriteEnabled()).toBe(true)
+    process.env.CLAUDE_CODE_COGNITIVE_LAYER = '0'
+    expect(isMemoryWriteEnabled()).toBe(false)
+    process.env.CLAUDE_CODE_COGNITIVE_LAYER = '1'
+    process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE = '0'
+    expect(isMemoryWriteEnabled()).toBe(false)
   })
 
   test('scope gate rejects subagents', () => {

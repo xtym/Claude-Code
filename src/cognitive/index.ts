@@ -7,11 +7,13 @@ export {
   isCognitiveLayerEnabled,
   isCognitiveScopeAllowed,
   isMemorySurfaceEnabled,
+  isMemoryWriteEnabled,
   isPlanningEnabled,
   isTranscriptRecoveryEnabled,
 } from './flags.js'
-export { recall, surfaceOnSessionStart } from './memory/MemoryStore.js'
+export { recall, surfaceOnSessionStart, write } from './memory/MemoryStore.js'
 export { rankMemoryHeaders } from './memory/rankMemories.js'
+export { findExistingMemoryByTags, mergeMemoryContent } from './memory/deduplicate.js'
 export {
   getSessionPlan,
   isActive as isPlanningActive,

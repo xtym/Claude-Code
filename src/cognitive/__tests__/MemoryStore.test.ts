@@ -1,15 +1,14 @@
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
-import { mkdir, rm, writeFile } from 'fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'fs/promises'
 import { dirname, join } from 'path'
 import { tmpdir } from 'os'
 import { getAutoMemPath } from '../../memdir/paths.js'
-import { recall, surfaceOnSessionStart } from '../memory/MemoryStore.js'
+import { recall, surfaceOnSessionStart, write, parseTagsFromFile } from '../memory/MemoryStore.js'
 
-const env = process.env
+const ORIGINAL_ENV = process.env
 let tempMemoryDir: string
 
 beforeEach(async () => {
-  process.env = { ...env }
   tempMemoryDir = join(
     tmpdir(),
     `cognitive-memory-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -20,7 +19,6 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  process.env = env
   getAutoMemPath.cache.clear()
   await rm(tempMemoryDir, { recursive: true, force: true })
 })
@@ -64,6 +62,8 @@ describe('MemoryStore.recall', () => {
 
 describe('MemoryStore.surfaceOnSessionStart', () => {
   test('returns attachment when flags and scope allow', async () => {
+    const origLayer = process.env.CLAUDE_CODE_COGNITIVE_LAYER
+    const origSurface = process.env.CLAUDE_CODE_COGNITIVE_MEMORY_SURFACE
     process.env.CLAUDE_CODE_COGNITIVE_LAYER = '1'
     process.env.CLAUDE_CODE_COGNITIVE_MEMORY_SURFACE = '1'
     await writeMemory(
@@ -83,6 +83,9 @@ describe('MemoryStore.surfaceOnSessionStart', () => {
     if (messages[0]?.attachment.type === 'session_memory_surface') {
       expect(messages[0].attachment.memories[0]?.content).toContain('single quotes')
     }
+
+    process.env.CLAUDE_CODE_COGNITIVE_LAYER = origLayer
+    process.env.CLAUDE_CODE_COGNITIVE_MEMORY_SURFACE = origSurface
   })
 
   test('returns empty when memory surface flag is off', async () => {
@@ -106,5 +109,75 @@ describe('MemoryStore.surfaceOnSessionStart', () => {
       agentId: '00000000-0000-4000-8000-000000000001',
     })
     expect(messages).toEqual([])
+  })
+})
+
+describe('MemoryStore.write', () => {
+  test('write creates file in temp dir', async () => {
+    const origLayer = process.env.CLAUDE_CODE_COGNITIVE_LAYER
+    const origMem = process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE
+    process.env.CLAUDE_CODE_COGNITIVE_LAYER = '1'
+    process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE = '1'
+
+    const result = await write({
+      scope: 'project',
+      tags: ['typescript', 'style'],
+      content: 'Use single quotes in TypeScript files.',
+    })
+
+    expect(result.path).toBeDefined()
+    expect(result.path).not.toBe('')
+    expect(result.path).toContain(tempMemoryDir)
+
+    // Verify file exists and contains content
+    const raw = await readFile(result.path, 'utf8')
+    expect(raw).toContain('typescript')
+    expect(raw).toContain('Use single quotes')
+
+    process.env.CLAUDE_CODE_COGNITIVE_LAYER = origLayer
+    process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE = origMem
+  })
+
+  test('write with matching tags merges instead of creating new', async () => {
+    const origLayer = process.env.CLAUDE_CODE_COGNITIVE_LAYER
+    const origMem = process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE
+    process.env.CLAUDE_CODE_COGNITIVE_LAYER = '1'
+    process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE = '1'
+
+    const result1 = await write({
+      scope: 'project',
+      tags: ['database', 'postgresql'],
+      content: 'The project uses PostgreSQL 15 as its primary database.',
+    })
+
+    const result2 = await write({
+      scope: 'project',
+      tags: ['postgresql', 'migration'],
+      content: 'The team is migrating from PostgreSQL 15 to 17.',
+    })
+
+    // Should be same file (dedup)
+    expect(result2.path).toBe(result1.path)
+
+    // Verify merged content
+    const raw = await readFile(result2.path, 'utf8')
+    expect(raw).toContain('PostgreSQL 15')
+    expect(raw).toContain('migrating from PostgreSQL')
+
+    process.env.CLAUDE_CODE_COGNITIVE_LAYER = origLayer
+    process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE = origMem
+  })
+
+  test('write no-ops when memory write flag is off', async () => {
+    process.env.CLAUDE_CODE_COGNITIVE_LAYER = '1'
+    process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE = '0'
+
+    const result = await write({
+      scope: 'project',
+      tags: ['test'],
+      content: 'Should not be written.',
+    })
+
+    expect(result.path).toBe('')
   })
 })

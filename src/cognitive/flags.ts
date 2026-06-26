@@ -17,6 +17,10 @@ export function isMemorySurfaceEnabled(): boolean {
   )
 }
 
+export function isMemoryWriteEnabled(): boolean {
+  return isCognitiveLayerEnabled() && isEnvTruthy(process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE)
+}
+
 export function isPlanningEnabled(): boolean {
   return (
     isCognitiveLayerEnabled() &&
