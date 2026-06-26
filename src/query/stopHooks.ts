@@ -19,6 +19,7 @@ import type {
 import { createAttachmentMessage } from '../utils/attachments.js'
 import { logForDebugging } from '../utils/debug.js'
 import { errorMessage } from '../utils/errors.js'
+import { tryCognitiveMemoryWrite } from '../cognitive/memory/memoryWriteHook.js'
 import type { REPLHookContext } from '../utils/hooks/postSamplingHooks.js'
 import {
   executeStopHooks,
@@ -153,6 +154,9 @@ export async function* handleStopHooks(
     }
     if (!toolUseContext.agentId) {
       void executeAutoDream(stopHookContext, toolUseContext.appendSystemMessage)
+    }
+    if (!toolUseContext.agentId) {
+      void tryCognitiveMemoryWrite(stopHookContext)
     }
   }
 

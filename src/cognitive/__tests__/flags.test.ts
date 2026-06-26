@@ -4,6 +4,7 @@ import {
   isTranscriptRecoveryEnabled,
   isMemorySurfaceEnabled,
   isMemoryWriteEnabled,
+  isEmbeddingEnabled,
   isPlanningEnabled,
   isCognitiveScopeAllowed,
 } from '../flags.js'
@@ -53,6 +54,14 @@ describe('cognitive flags', () => {
     process.env.CLAUDE_CODE_COGNITIVE_LAYER = '1'
     process.env.CLAUDE_CODE_COGNITIVE_PLANNING = '0'
     expect(isPlanningEnabled()).toBe(false)
+  })
+
+  test('embedding flag requires master', () => {
+    process.env.CLAUDE_CODE_COGNITIVE_LAYER = ''
+    process.env.CLAUDE_CODE_COGNITIVE_EMBEDDING = '1'
+    expect(isEmbeddingEnabled()).toBe(false)
+    process.env.CLAUDE_CODE_COGNITIVE_LAYER = '1'
+    expect(isEmbeddingEnabled()).toBe(true)
   })
 
   test('memory write flag requires master', () => {

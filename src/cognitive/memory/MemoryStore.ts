@@ -11,7 +11,13 @@ import {
   readMemoriesForSurfacing,
 } from '../../utils/attachments.js'
 import { parseFrontmatter } from '../../utils/frontmatterParser.js'
-import { isCognitiveScopeAllowed, isMemorySurfaceEnabled, isMemoryWriteEnabled } from '../flags.js'
+import {
+  isCognitiveScopeAllowed,
+  isEmbeddingEnabled,
+  isMemorySurfaceEnabled,
+  isMemoryWriteEnabled,
+} from '../flags.js'
+import { rankMemoriesWithEmbedding } from '../embedding/embeddingRanker.js'
 import type { MemoryEntry, MemoryScope } from '../types.js'
 import { rankMemoryHeaders } from './rankMemories.js'
 import { findExistingMemoryByTags, mergeMemoryContent, parseFrontmatterTags } from './deduplicate.js'
@@ -40,6 +46,12 @@ export async function recall(
 
   const memoryDir = getAutoMemPath()
   const abortSignal = signal ?? new AbortController().signal
+
+  // When embedding is enabled, use content-based embedding ranking instead of header keyword matching
+  if (isEmbeddingEnabled()) {
+    return rankMemoriesWithEmbedding(query, scope, limit, memoryDir, abortSignal)
+  }
+
   const headers = await scanMemoryFiles(memoryDir, abortSignal)
   const ranked = rankMemoryHeaders(headers, query, limit)
   if (ranked.length === 0) return []
@@ -163,6 +175,29 @@ export async function surfaceOnSessionStart(
 
   const memoryDir = getAutoMemPath()
   const abortSignal = ctx.signal ?? new AbortController().signal
+
+  // When embedding is enabled, use content-based ranking
+  if (isEmbeddingEnabled()) {
+    const memories = await rankMemoriesWithEmbedding(
+      query,
+      'project',
+      DEFAULT_RECALL_LIMIT,
+      memoryDir,
+      abortSignal,
+    )
+    if (memories.length === 0) return []
+    return [
+      createAttachmentMessage({
+        type: 'session_memory_surface',
+        memories: memories.map(m => ({
+          path: m.path ?? '',
+          content: m.content,
+          mtimeMs: m.createdAt as number,
+        })),
+      }),
+    ]
+  }
+
   const headers = await scanMemoryFiles(memoryDir, abortSignal)
   const ranked = rankMemoryHeaders(headers, query, DEFAULT_RECALL_LIMIT)
   if (ranked.length === 0) return []

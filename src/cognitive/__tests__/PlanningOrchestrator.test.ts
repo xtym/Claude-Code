@@ -15,6 +15,7 @@ const {
   isActive,
   onPlanApproved,
   onToolResult,
+  planFromRevisedMarkdown,
   requestReplan,
   resetPlanningOrchestratorForTesting,
   getFailureLog,
@@ -167,6 +168,22 @@ describe('PlanningOrchestrator', () => {
     expect(updated?.activeStepId).toBe('step-6')
     expect(updated?.steps.find(s => s.id === 'step-5')?.status).toBe('done')
     expect(updated?.steps.find(s => s.id === 'step-6')?.status).toBe('running')
+  })
+
+  test('planFromRevisedMarkdown parses md and creates executing plan', () => {
+    resetPlanningOrchestratorForTesting()
+    const md = `# Revised Plan\n\n1. Fix database connection\n2. Retry migration\n3. Verify results`
+    const plan = planFromRevisedMarkdown(md)
+    expect(plan).not.toBeNull()
+    expect(plan!.status).toBe('executing')
+    expect(plan!.steps).toHaveLength(3)
+    expect(plan!.steps[0].status).toBe('running')
+    expect(plan!.steps[1].status).toBe('pending')
+
+    const saved = readPlanState()
+    expect(saved).not.toBeNull()
+    expect(saved!.id).toBe(plan!.id)
+    expect(saved!.activeStepId).toBe('step-1')
   })
 })
 

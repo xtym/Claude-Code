@@ -15,6 +15,7 @@ import type {
 import { buildPlanUpdatedAttachment } from './replanAttachments.js'
 import {
   firstRunnableStepId,
+  parseStepsFromPlanMd,
   planFromApprovedMarkdown,
   readPlanState,
   writePlanState,
@@ -148,6 +149,37 @@ function revisePlanAfterFailure(plan: PlanState, reason: string): ReplanOutput {
     attachment: buildPlanUpdatedAttachment(revised, reason),
     contextHint,
   }
+}
+
+export function planFromRevisedMarkdown(planMd: string): PlanState | null {
+  if (!planMd.trim()) return null
+
+  const steps = parseStepsFromPlanMd(planMd)
+  if (steps.length === 0) return null
+
+  const planId = sessionPlan?.id ?? randomUUID()
+
+  const activeStepId = firstRunnableStepId({ id: planId, steps, status: 'executing' })
+  const runningSteps = steps.map(step => ({
+    ...step,
+    status: step.id === activeStepId ? ('running' as const) : ('pending' as const),
+  }))
+
+  const revised: PlanState = {
+    id: planId,
+    steps: runningSteps,
+    status: 'executing',
+    activeStepId,
+    replanCountsByStepId: {},
+  }
+
+  sessionPlan = revised
+  writePlanState(revised)
+  clearFailureCounters(activeStepId ?? '')
+  consecutiveRecoverableErrors.clear()
+  validationErrorsByStep.clear()
+
+  return revised
 }
 
 function shouldTriggerReplan(

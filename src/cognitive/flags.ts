@@ -21,6 +21,10 @@ export function isMemoryWriteEnabled(): boolean {
   return isCognitiveLayerEnabled() && isEnvTruthy(process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE)
 }
 
+export function isEmbeddingEnabled(): boolean {
+  return isCognitiveLayerEnabled() && isEnvTruthy(process.env.CLAUDE_CODE_COGNITIVE_EMBEDDING)
+}
+
 export function isPlanningEnabled(): boolean {
   return (
     isCognitiveLayerEnabled() &&

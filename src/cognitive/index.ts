@@ -1,4 +1,12 @@
 export {
+  buildEmbeddingIndex,
+  queryEmbeddingIndex,
+  serializeIndex,
+  deserializeIndex,
+} from './embedding/localEmbeddingIndex.js'
+export { rerankSlicesWithEmbedding, rankMemoriesWithEmbedding } from './embedding/embeddingRanker.js'
+export { isEmbeddingEnabled } from './flags.js'
+export {
   startTranscriptRecoveryPrefetch,
   toAttachmentMessages,
 } from './context/TranscriptRecoveryIndex.js'
@@ -18,6 +26,7 @@ export {
   getSessionPlan,
   isActive as isPlanningActive,
   onPlanApproved,
+  planFromRevisedMarkdown,
   requestReplan,
 } from './planning/PlanningOrchestrator.js'
 export { handlePlanningToolResult } from './planning/planningHook.js'

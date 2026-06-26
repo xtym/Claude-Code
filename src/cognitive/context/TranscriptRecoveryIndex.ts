@@ -7,7 +7,12 @@ import {
 } from '../../utils/attachments.js'
 import type { Message } from '../../types/message.js'
 import { createChildAbortController } from '../../utils/abortController.js'
-import { isTranscriptRecoveryEnabled, isCognitiveScopeAllowed } from '../flags.js'
+import {
+  isCognitiveScopeAllowed,
+  isEmbeddingEnabled,
+  isTranscriptRecoveryEnabled,
+} from '../flags.js'
+import { rerankSlicesWithEmbedding } from '../embedding/embeddingRanker.js'
 import { allocateRecoverySlices } from '../InjectionBudgetCoordinator.js'
 import type { RecoveryPrefetch, RecoverySlice } from '../types.js'
 import { buildRecoverySlicesFromMessages, getTranscriptMessageText } from './localIndex.js'
@@ -36,7 +41,9 @@ export function startTranscriptRecoveryPrefetch(
 
   const promise = Promise.resolve().then(() => {
     if (controller.signal.aborted) return []
-    const slices = buildRecoverySlicesFromMessages(messages, query)
+    let slices = buildRecoverySlicesFromMessages(messages, query)
+    // Phase 3.1: rerank with embedding when enabled
+    slices = rerankSlicesWithEmbedding(slices, query)
     return allocateRecoverySlices(slices, {
       maxBytes: Number.MAX_SAFE_INTEGER,
       memoryBytesAlreadyUsed: ctx.memoryBytesAlreadyUsed ?? 0,
