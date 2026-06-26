@@ -22,6 +22,21 @@ import {
 } from './planState.js'
 import { classifyToolError } from './toolErrorKind.js'
 
+// Fork-agent replan context (system prompt generated lazily in fork)
+export type ForkReplanContext = {
+  mainLoopModel: string
+  tools: unknown[]
+}
+let pendingForkContext: ForkReplanContext | null = null
+
+export function storeForkReplanContext(ctx: ForkReplanContext): void {
+  pendingForkContext = ctx
+}
+
+export function clearForkReplanContext(): void {
+  pendingForkContext = null
+}
+
 const RECOVERABLE_FAILURE_THRESHOLD = 3
 const MAX_AUTO_REPLANS_PER_STEP = 2
 const MAX_FAILURE_LOG = 3
@@ -60,6 +75,29 @@ function scopeFromContext(ctx: PlanningContext): PlanningScope {
     }
   }
   return ctx
+}
+
+export function onTaskCreated(
+  taskId: string,
+  stepId?: string,
+): PlanState | null {
+  const plan = loadActivePlan()
+  if (!plan) return null
+
+  const targetStepId = stepId ?? plan.activeStepId
+  if (!targetStepId) return null
+
+  const steps = plan.steps.map(step => {
+    if (step.id === targetStepId) {
+      return { ...step, taskId }
+    }
+    return step
+  })
+
+  const updated: PlanState = { ...plan, steps }
+  sessionPlan = updated
+  writePlanState(updated)
+  return updated
 }
 
 export function resetPlanningOrchestratorForTests(): void {
@@ -115,6 +153,9 @@ function revisePlanAfterFailure(plan: PlanState, reason: string): ReplanOutput {
     ? `${step.description} (revised: try alternate approach)`
     : 'Revise failed step'
 
+  // Fire-and-forget fork-agent revision (best-effort, async)
+  void tryForkAgentRevision(plan, reason).catch(() => {})
+
   const nextSteps = plan.steps.map(entry => {
     if (entry.id !== plan.activeStepId) return entry
     return {
@@ -151,6 +192,77 @@ function revisePlanAfterFailure(plan: PlanState, reason: string): ReplanOutput {
   }
 }
 
+async function tryForkAgentRevision(
+  plan: PlanState,
+  reason: string,
+): Promise<void> {
+  const ctx = pendingForkContext
+  if (!ctx) return
+
+  try {
+    const { readFileSync } = await import('fs')
+    const { createUserMessage } = await import('../../utils/messages.js')
+    const { getPlanFilePath } = await import('../../utils/plans.js')
+    const { runForkedAgent, createCacheSafeParams } = await import('../../utils/forkedAgent.js')
+    const { getSystemPrompt } = await import('../../constants/prompts.js')
+    const { getUserContext, getSystemContext } = await import('../../context.js')
+
+    const planPath = getPlanFilePath()
+    let planMd = ''
+    try {
+      planMd = readFileSync(planPath, 'utf-8')
+    } catch {
+      return
+    }
+    if (!planMd) return
+
+    const [systemPrompt, userContext, systemContext] = await Promise.all([
+      getSystemPrompt(ctx.tools as never, ctx.mainLoopModel),
+      getUserContext(),
+      getSystemContext(),
+    ])
+    const forkContextMessages = [createUserMessage({ content: `Current plan:\n\n${planMd}` })]
+
+    const forkPrompt = `You are a plan revision specialist. The current plan step failed repeatedly during tool execution.
+
+Reason: ${reason}
+
+Current plan:
+${planMd}
+
+---
+
+Revision instructions:
+1. Read the plan file using Read
+2. Identify why the failing step is having issues
+3. Rewrite the plan file using Write with revised steps — change the approach, add prerequisite steps, or split the step
+4. Keep completed steps (those before the failing step) marked as "- [x]"
+5. The plan is markdown with numbered steps (1., 2., 3. etc.)
+6. The failing step is: ${plan.activeStepId}
+
+Write the revised plan file now.`
+
+    await runForkedAgent({
+      promptMessages: [createUserMessage({ content: forkPrompt })],
+      cacheSafeParams: createCacheSafeParams({
+        systemPrompt,
+        userContext,
+        systemContext,
+        toolUseContext: {} as never,
+        forkContextMessages,
+      }),
+      canUseTool: (toolName: string) =>
+        toolName === 'Read' || toolName === 'Write' || toolName === 'Bash',
+      querySource: 'session_memory',
+      forkLabel: 'auto-replan',
+      maxTurns: 5,
+      skipTranscript: true,
+    })
+  } catch {
+    // Fork-agent failure is non-critical; programmatic replan already returned
+  }
+}
+
 export function planFromRevisedMarkdown(planMd: string): PlanState | null {
   if (!planMd.trim()) return null
 
@@ -170,7 +282,9 @@ export function planFromRevisedMarkdown(planMd: string): PlanState | null {
     steps: runningSteps,
     status: 'executing',
     activeStepId,
-    replanCountsByStepId: {},
+    replanCountsByStepId: {
+      ...(sessionPlan?.replanCountsByStepId ?? {}),
+    },
   }
 
   sessionPlan = revised

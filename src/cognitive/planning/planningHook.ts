@@ -4,7 +4,7 @@ import type { Message } from '../../types/message.js'
 import { createAttachmentMessage } from '../../utils/attachments.js'
 import { createUserMessage } from '../../utils/messages.js'
 import type { ToolErrorKind } from '../types.js'
-import { isActive, onToolResult } from './PlanningOrchestrator.js'
+import { isActive, onToolResult, storeForkReplanContext } from './PlanningOrchestrator.js'
 
 export type PlanningToolResultParams = {
   toolName: string
@@ -23,6 +23,12 @@ export function handlePlanningToolResult(
     agentId: params.toolUseContext.agentId,
   }
   if (!isActive(scope)) return []
+
+  // Store context for potential fork-agent auto-replan
+  storeForkReplanContext({
+    mainLoopModel: params.toolUseContext.options.mainLoopModel,
+    tools: params.toolUseContext.options.tools as unknown[],
+  })
 
   const replan = onToolResult({
     toolName: params.toolName,

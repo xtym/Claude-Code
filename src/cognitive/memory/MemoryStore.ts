@@ -21,6 +21,9 @@ import { rankMemoriesWithEmbedding } from '../embedding/embeddingRanker.js'
 import type { MemoryEntry, MemoryScope } from '../types.js'
 import { rankMemoryHeaders } from './rankMemories.js'
 import { findExistingMemoryByTags, mergeMemoryContent, parseFrontmatterTags } from './deduplicate.js'
+import { sequential } from '../../utils/sequential.js'
+
+const writeQueue = sequential(writeImpl)
 
 const DEFAULT_RECALL_LIMIT = 5
 
@@ -109,6 +112,12 @@ export type WriteMemoryParams = {
 }
 
 export async function write(
+  params: WriteMemoryParams,
+): Promise<{ path: string }> {
+  return writeQueue(params)
+}
+
+async function writeImpl(
   params: WriteMemoryParams,
 ): Promise<{ path: string }> {
   if (!isMemoryWriteEnabled()) {

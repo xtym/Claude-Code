@@ -14,10 +14,6 @@ export function getPlanJsonPath(agentId?: AgentId): string {
   return getPlanStatePath(agentId)
 }
 
-export function parseStepsFromMarkdown(planMd: string): PlanStep[] {
-  return parseStepsFromPlanMd(planMd)
-}
-
 export function parseStepsFromPlanMd(planMd: string): PlanStep[] {
   const steps: PlanStep[] = []
   for (const line of planMd.split('\n')) {
@@ -75,13 +71,6 @@ export function writePlanState(plan: PlanState, agentId?: AgentId): void {
   } catch (error) {
     logError(error)
   }
-}
-
-export async function writePlanStateAsync(
-  plan: PlanState,
-  agentId?: AgentId,
-): Promise<void> {
-  writePlanState(plan, agentId)
 }
 
 export function createExecutingPlanState(steps: PlanStep[]): PlanState {

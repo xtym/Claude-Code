@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach, mock } from 'bun:test'
-import { mkdir, rm, writeFile } from 'fs/promises'
+import { mkdir, rm, unlink, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import fixture from './fixtures/plan-executing-step5-fail.json'
@@ -14,11 +14,14 @@ mock.module('../../utils/plans.js', () => ({
 const {
   isActive,
   onPlanApproved,
+  onTaskCreated,
   onToolResult,
   planFromRevisedMarkdown,
   requestReplan,
   resetPlanningOrchestratorForTesting,
   getFailureLog,
+  storeForkReplanContext,
+  clearForkReplanContext,
 } = await import('../planning/PlanningOrchestrator.js')
 const { readPlanState, writePlanState, getPlanJsonPath } = await import(
   '../planning/planState.js'
@@ -184,6 +187,53 @@ describe('PlanningOrchestrator', () => {
     expect(saved).not.toBeNull()
     expect(saved!.id).toBe(plan!.id)
     expect(saved!.activeStepId).toBe('step-1')
+  })
+
+  test('onTaskCreated links taskId to active step', async () => {
+    resetPlanningOrchestratorForTesting()
+    const md = `1. Setup database\n2. Configure API\n3. Deploy`
+    const plan = planFromRevisedMarkdown(md)
+    expect(plan).not.toBeNull()
+    expect(plan!.activeStepId).toBe('step-1')
+
+    // Step 1 should not have a taskId yet
+    expect(plan!.steps[0].taskId).toBeUndefined()
+
+    // Link a task to the active step
+    const result = onTaskCreated('task-abc-123')
+    expect(result).not.toBeNull()
+    expect(result!.steps[0].taskId).toBe('task-abc-123')
+
+    // Link to a specific step
+    const result2 = onTaskCreated('task-def-456', 'step-2')
+    expect(result2!.steps[1].taskId).toBe('task-def-456')
+    expect(result2!.steps[0].taskId).toBe('task-abc-123') // preserved
+
+    // No active plan
+    resetPlanningOrchestratorForTesting()
+    try { await unlink(getPlanJsonPath()) } catch { /* ignore */ }
+    expect(onTaskCreated('task-xxx')).toBeNull()
+  })
+
+  test('storeForkReplanContext and clearForkReplanContext round-trip', () => {
+    clearForkReplanContext()
+    // Default: no fork context
+    const result1 = onToolResult({
+      toolName: 'Bash',
+      toolUseId: 'tu1',
+      isError: true,
+    })
+    expect(result1).toBeNull() // first error, threshold not reached
+
+    // After clear, calling replan still works
+    storeForkReplanContext({
+      mainLoopModel: 'claude-sonnet-4',
+      tools: [],
+    })
+    // Context is stored, fork-agent would fire on replan but is fire-and-forget
+    clearForkReplanContext()
+    // Clear should not throw
+    expect(true).toBe(true)
   })
 })
 

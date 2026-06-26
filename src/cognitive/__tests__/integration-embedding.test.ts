@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test'
 import { buildEmbeddingIndex, queryEmbeddingIndex } from '../embedding/localEmbeddingIndex.js'
-import { rerankSlicesWithEmbedding } from '../embedding/embeddingRanker.js'
+import { rerankSlicesWithEmbedding, clearEmbeddingCache } from '../embedding/embeddingRanker.js'
 import type { RecoverySlice } from '../types.js'
 
 describe('Phase 3.1 T1b keyword-independent recall', () => {
@@ -94,4 +94,10 @@ describe('Phase 3.1 T1b keyword-independent recall', () => {
     expect(results.length).toBe(3)
     expect(results[0].id).toBe('react')
   })
+})
+
+test('embedding cache clear is safe and idempotent', () => {
+  clearEmbeddingCache()
+  clearEmbeddingCache()
+  expect(true).toBe(true)
 })

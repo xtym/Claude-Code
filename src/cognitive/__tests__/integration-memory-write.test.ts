@@ -24,7 +24,6 @@ afterEach(async () => {
   delete process.env.CLAUDE_CODE_COGNITIVE_LAYER
   delete process.env.CLAUDE_CODE_COGNITIVE_MEMORY_WRITE
   delete process.env.CLAUDE_COWORK_MEMORY_PATH_OVERRIDE
-  delete process.env.CLAUDE_CODE_COGNITIVE_MEMORY
   getAutoMemPath.cache.clear()
   await rm(tempMemoryDir, { recursive: true, force: true })
 })

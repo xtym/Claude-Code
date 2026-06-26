@@ -4,6 +4,7 @@ import {
   MAX_COGNITIVE_INJECTION_BYTES,
   allocateRecoverySlices,
   estimateSliceBytes,
+  getMaxInjectionBytesForTurn,
 } from '../InjectionBudgetCoordinator.js'
 
 function slice(content: string, score: number): RecoverySlice {
@@ -41,5 +42,15 @@ describe('InjectionBudgetCoordinator', () => {
       memoryBytesAlreadyUsed: MAX_COGNITIVE_INJECTION_BYTES,
     })
     expect(result).toEqual([])
+  })
+
+  test('getMaxInjectionBytesForTurn caps at 30k for default provider', () => {
+    const bytes = getMaxInjectionBytesForTurn(0)
+    expect(bytes).toBe(30_000)
+  })
+
+  test('getMaxInjectionBytesForTurn subtracts already-used memory', () => {
+    const bytes = getMaxInjectionBytesForTurn(10_000)
+    expect(bytes).toBe(20_000)
   })
 })

@@ -3,6 +3,8 @@ import type { Message } from '../../types/message.js'
 import { getContentText, isCompactBoundaryMessage } from '../../utils/messages.js'
 import type { RecoverySlice } from '../types.js'
 import { scoreRecoverySlice } from './relevanceScore.js'
+import { isTranscriptRecoveryEnabled } from '../flags.js'
+import { persistSlices } from './recoveryIndexPersistence.js'
 
 export function getTranscriptMessageText(message: Message): string | null {
   if (message.type === 'user' || message.type === 'assistant') {
@@ -86,7 +88,7 @@ export function snapshotPreCompactRegion(
 
   if (!summaryText) return []
 
-  return [
+  const slices: RecoverySlice[] = [
     {
       sliceId: randomUUID(),
       source: 'compact_summary',
@@ -96,4 +98,20 @@ export function snapshotPreCompactRegion(
       compactBoundaryId: boundaryId,
     },
   ]
+
+  // Persist slices for cross-session recovery
+  if (isTranscriptRecoveryEnabled()) {
+    void persistSlices(
+      slices.map(s => ({
+        sliceId: s.sliceId,
+        source: s.source,
+        content: s.content,
+        tokenEstimate: s.tokenEstimate,
+        compactBoundaryId: s.compactBoundaryId,
+        createdAt: Date.now(),
+      })),
+    ).catch(() => {})
+  }
+
+  return slices
 }

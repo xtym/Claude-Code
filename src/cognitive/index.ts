@@ -4,13 +4,14 @@ export {
   serializeIndex,
   deserializeIndex,
 } from './embedding/localEmbeddingIndex.js'
-export { rerankSlicesWithEmbedding, rankMemoriesWithEmbedding } from './embedding/embeddingRanker.js'
+export { rerankSlicesWithEmbedding, rankMemoriesWithEmbedding, clearEmbeddingCache } from './embedding/embeddingRanker.js'
 export { isEmbeddingEnabled } from './flags.js'
 export {
   startTranscriptRecoveryPrefetch,
   toAttachmentMessages,
 } from './context/TranscriptRecoveryIndex.js'
 export { snapshotPreCompactRegion } from './context/localIndex.js'
+export { persistSlices, loadPersistedSlices } from './context/recoveryIndexPersistence.js'
 export {
   isCognitiveLayerEnabled,
   isCognitiveScopeAllowed,
@@ -26,8 +27,11 @@ export {
   getSessionPlan,
   isActive as isPlanningActive,
   onPlanApproved,
+  onTaskCreated,
   planFromRevisedMarkdown,
   requestReplan,
+  storeForkReplanContext,
+  clearForkReplanContext,
 } from './planning/PlanningOrchestrator.js'
 export { handlePlanningToolResult } from './planning/planningHook.js'
 export type {
