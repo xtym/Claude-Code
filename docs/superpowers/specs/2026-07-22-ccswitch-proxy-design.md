@@ -1,7 +1,7 @@
 # CC Switch Proxy Launcher Design
 
 **Date:** 2026-07-22  
-**Status:** Approved (design) — awaiting implementation plan  
+**Status:** Implemented — see `docs/superpowers/plans/2026-07-22-ccswitch-proxy.md`  
 **Approach:** Minimal launcher (Option 1) — no LiteLLM
 
 ## Summary
