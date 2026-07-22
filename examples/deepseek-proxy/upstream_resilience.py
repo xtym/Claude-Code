@@ -36,3 +36,8 @@ class UpstreamResilienceHandler(CustomLogger):
             extra["User-Agent"] = ua
         data["extra_headers"] = extra
         return data
+
+
+# LiteLLM yaml callbacks must reference an *instance*, not the class
+# (class methods called unbound → TypeError missing 'self').
+proxy_handler_instance = UpstreamResilienceHandler()

@@ -17,6 +17,7 @@ $proxyBase = $env:CCSWITCH_BASE_URL
 $env:ANTHROPIC_BASE_URL = $proxyBase
 # ANTHROPIC_API_KEY already resolved in load-env.ps1
 
+
 $env:ANTHROPIC_MODEL = $env:LLM_MODEL
 $env:ANTHROPIC_DEFAULT_SONNET_MODEL = $env:LLM_MODEL
 $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $env:LLM_MODEL

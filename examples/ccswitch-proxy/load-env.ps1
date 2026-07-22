@@ -40,13 +40,18 @@ if (-not $env:LLM_MODEL) {
 
 Set-EnvDefault -Name "LLM_MODEL_OPUS" -Default $env:LLM_MODEL
 
-# Key resolution: API_KEY → AUTH_TOKEN → placeholder
+# Key resolution: API_KEY → AUTH_TOKEN → placeholder.
+# freebuff2api upstream wants Bearer; set both so Claude Code (x-api-key) and
+# CC Switch provider remapping (AUTH_TOKEN) stay aligned.
 if (-not $env:ANTHROPIC_API_KEY) {
   if ($env:ANTHROPIC_AUTH_TOKEN) {
     $env:ANTHROPIC_API_KEY = $env:ANTHROPIC_AUTH_TOKEN
   } else {
     $env:ANTHROPIC_API_KEY = "sk-ccswitch"
   }
+}
+if (-not $env:ANTHROPIC_AUTH_TOKEN -and $env:ANTHROPIC_API_KEY) {
+  $env:ANTHROPIC_AUTH_TOKEN = $env:ANTHROPIC_API_KEY
 }
 
 $env:CCSWITCH_BASE_URL = $env:CCSWITCH_BASE_URL.TrimEnd('/')
